@@ -105,6 +105,6 @@ def predict(classifier):
 if __name__ == '__main__':
     team_data = np.load('team_data.npy')
     training_set, label_set = loadData(
-        '../seedcupTask/matchDataTrain.csv', team_data)
+        '../matchDataTrain.csv', team_data)
     classifier = train(training_set, label_set)
 # /tmp/tmpxjtir9ne
