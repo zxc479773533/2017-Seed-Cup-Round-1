@@ -44,9 +44,9 @@ def train(training_set, label_set):
 
     # Build 3 layer DNN with 10, 20, 10 units respectively.
     classifier = tf.estimator.DNNClassifier(feature_columns=feature_columns,
-                                            hidden_units=[40,  60],
-                                            n_classes=126,
-                                            model_dir="./seedcup_model")
+                                            hidden_units=[40,60],
+                                            n_classes=6,)
+                                            # model_dir="./seedcup_model")
 
     # Define the training inputs    
     train_input_fn = tf.estimator.inputs.numpy_input_fn(
@@ -56,7 +56,7 @@ def train(training_set, label_set):
         shuffle=True)
 
     # Train model.
-    classifier.train(input_fn=train_input_fn, steps=50000)
+    classifier.train(input_fn=train_input_fn, steps=65000)
 
     # Define the test inputs
     test_input_fn = tf.estimator.inputs.numpy_input_fn(
@@ -84,7 +84,7 @@ def train(training_set, label_set):
     length = len(classes)
     right = 0
     for i in range(length):
-        print(classes[i][0], test_label_set[i])
+        #print(classes[i][0], test_label_set[i])
         if (int(classes[i][0].decode('utf8')) - 2) * (test_label_set[i] - 2) >= 0:
             right += 1
 
@@ -116,3 +116,12 @@ if __name__ == '__main__':
         '../matchDataTrain.csv', team_data)
     classifier = train(training_set, label_set)
 # /tmp/tmpxjtir9ne
+
+
+
+'''
+40 60 50000 0.7721
+40 60 60000 0.773
+40 60 70000 0.74
+40 60 65000 0.7952
+'''
