@@ -4,7 +4,10 @@
 import os
 import urllib
 import tensorflow as tf
+import pandas as pd
 import numpy as np
+from sklearn.decomposition import PCA
+
 
 def loadData(data_file, team_data):
     # load match information
@@ -12,24 +15,33 @@ def loadData(data_file, team_data):
         fp.readline()
         lines = [line.split(',') for line in fp.readlines()]
 
-    # data processing
+    # get data
     data_set = []
     label_set = []
     for line in lines:
-        newdata = list(team_data[int(line[0])]) + list(team_data[int(line[1])])
+        # expand team information
+        newdata = []
+        # get win and lose
+        line[2] = line[2].strip()
+        line[3] = line[3].strip()
         index2 = line[2].find('胜')
         index3 = line[3].find('胜')
         newdata += [int(line[2][:index2]), int(line[2][index2+1:-1]),
                     int(line[3][:index3]), int(line[3][index3+1:-1])]
+        guest = list(team_data[int(line[0])])
+        home = list(team_data[int(line[1])])
+        newdata += [guest[i] - home[i] for i in range(len(home))]
         data_set.append(newdata)
 
-    if len(lines[0]) == 5:
+    if len(lines[0]) == 5:  # if there is match result
         for line in lines:
             score_data = line[4].split(':')
             diff = int(score_data[0]) - int(score_data[1])
             if diff > 0:
+                # if (0, 4) 0; if [4, 11) 1; if [11, ...) 2
                 newlabel = 0 if diff < 4 else (1 if diff < 11 else 2)
             else:
+                # if (-4, 0] 3; if (-11, -4] 4; if (..., -11] 5
                 newlabel = 3 if diff > -4 else (4 if diff > -11 else 5)
             label_set.append(newlabel)
 
@@ -37,18 +49,27 @@ def loadData(data_file, team_data):
     return data_set, label_set
 
 
-def train(training_set, label_set):
+def train_all(training_set, label_set):
+    n = 10
+    print(n)
+    pca = PCA(n_components=n)
+    training_set = pca.fit_transform(training_set)
+    print(pca.explained_variance_ratio_)
+    # return
+
     # Specify that all features have real-value data
     feature_columns = [tf.feature_column.numeric_column(
         "x", shape=[len(training_set[0])])]
 
     # Build 3 layer DNN with 10, 20, 10 units respectively.
+    hidden_units = [8]
+    print(hidden_units)
     classifier = tf.estimator.DNNClassifier(feature_columns=feature_columns,
-                                            hidden_units=[40,  60],
-                                            n_classes=126,
-                                            model_dir="./seedcup_model")
-
-    # Define the training inputs    
+                                            hidden_units=hidden_units,
+                                            n_classes=6,)
+    # model_dir="./seedcup_model")
+    
+    # Define the training inputs
     train_input_fn = tf.estimator.inputs.numpy_input_fn(
         x={"x": np.array(training_set[:6000])},
         y=np.array(label_set[:6000]),
@@ -56,7 +77,39 @@ def train(training_set, label_set):
         shuffle=True)
 
     # Train model.
-    classifier.train(input_fn=train_input_fn, steps=50000)
+    classifier.train(input_fn=train_input_fn, steps=65000)
+    return classifier, pca
+
+
+def train(training_set, label_set):
+    n = 10
+    print(n)
+    pca = PCA(n_components=n)
+    training_set = pca.fit_transform(training_set)
+    print(pca.explained_variance_ratio_)
+    # return
+
+    # Specify that all features have real-value data
+    feature_columns = [tf.feature_column.numeric_column(
+        "x", shape=[len(training_set[0])])]
+
+    # Build 3 layer DNN with 10, 20, 10 units respectively.
+    hidden_units = [10]
+    print(hidden_units)
+    classifier = tf.estimator.DNNClassifier(feature_columns=feature_columns,
+                                            hidden_units=hidden_units,
+                                            n_classes=6,)
+    # model_dir="./seedcup_model")
+    
+    # Define the training inputs
+    train_input_fn = tf.estimator.inputs.numpy_input_fn(
+        x={"x": np.array(training_set[:6000])},
+        y=np.array(label_set[:6000]),
+        num_epochs=None,
+        shuffle=True)
+
+    # Train model.
+    classifier.train(input_fn=train_input_fn, steps=65000)
 
     # Define the test inputs
     test_input_fn = tf.estimator.inputs.numpy_input_fn(
@@ -84,35 +137,36 @@ def train(training_set, label_set):
     length = len(classes)
     right = 0
     for i in range(length):
-        print(classes[i][0], test_label_set[i])
-        if (int(classes[i][0].decode('utf8')) - 2) * (test_label_set[i] - 2) >= 0:
+        if (int(classes[i][0].decode('utf8')) - 2.5) * (test_label_set[i] - 2.5) > 0:
             right += 1
 
     print(
         "New Samples, Accuracy: {}\n"
         .format(right / length))
-    return classifier
+    return classifier, pca
 
 
-# def predict(classifier):
-#     # Classify two new flower samples.
-#     new_samples = 
-#     predict_input_fn = tf.estimator.inputs.numpy_input_fn(
-#         x={"x": new_samples},
-#         num_epochs=1,
-#         shuffle=False)
+def predict(classifier, team_data, pca):
+    # Classify two new flower samples.
+    new_samples, labels = loadData('../seedcupTask/matchDataTest.csv', team_data)
+    new_samples = pca.transform(new_samples)
+    predict_input_fn = tf.estimator.inputs.numpy_input_fn(
+        x={"x": np.array(new_samples)},
+        num_epochs=1,
+        shuffle=False)
 
-#     predictions = list(classifier.predict(input_fn=predict_input_fn))
-#     probabilities = [p['probabilities'] for p in predictions]
+    predictions = list(classifier.predict(input_fn=predict_input_fn))
+    probabilities = [p['probabilities'] for p in predictions]
+    win_prob = [sum(x[3:6]) for x in probabilities]
 
-#     print(
-#         "New Samples, probabilities: {}\n"
-#         .format(probabilities))
-
+    team_data = pd.DataFrame(np.array(win_prob), columns=[1])
+    team_data.to_csv('result.csv')
+    
 
 if __name__ == '__main__':
-    team_data = np.load('team_data.npy')
+    team_data = np.load('../all_data.npy')
     training_set, label_set = loadData(
-        '../matchDataTrain.csv', team_data)
-    classifier = train(training_set, label_set)
+        '../2017-Seed-Cup-Round-1/matchDataTrain.csv', team_data)
+    classifier, pca = train(training_set, label_set)
+    predict(classifier, team_data, pca)
 # /tmp/tmpxjtir9ne

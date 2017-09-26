@@ -85,7 +85,7 @@ def train(training_set, label_set):
     right = 0
     for i in range(length):
         #print(classes[i][0], test_label_set[i])
-        if (int(classes[i][0].decode('utf8')) - 2) * (test_label_set[i] - 2) >= 0:
+        if (int(classes[i][0].decode('utf8')) - 2.5) * (test_label_set[i] - 2.5) >= 0:
             right += 1
 
     print(
