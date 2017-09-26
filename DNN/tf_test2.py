@@ -149,7 +149,7 @@ def train(training_set, label_set,n,hide):
 
 def predict(classifier, team_data, pca):
     # Classify two new flower samples.
-    new_samples, labels = loadData('../seedcupTask/matchDataTest.csv', team_data)
+    new_samples, labels = loadData('../matchDataTest.csv', team_data)
     new_samples = pca.transform(new_samples)
     predict_input_fn = tf.estimator.inputs.numpy_input_fn(
         x={"x": np.array(new_samples)},
@@ -171,5 +171,5 @@ if __name__ == '__main__':
     training_set, label_set = loadData(
         '../matchDataTrain.csv', team_data)
     classifier, pca = train(training_set, label_set,n,hide)
-    predict(classifier, team_data, pca)
+    #predict(classifier, team_data, pca)
 # /tmp/tmpxjtir9ne
