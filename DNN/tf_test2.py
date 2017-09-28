@@ -27,9 +27,10 @@ def loadData(data_file, team_data, win_rate):
         index3 = line[3].find('胜')
         newdata += [int(line[2][:index2]), int(line[2][index2+1:-1]),
                     int(line[3][:index3]), int(line[3][index3+1:-1])]
-        newdata.append(win_rate[int(line[0])][0])
-        guest = list(team_data[int(line[0])])
-        home = list(team_data[int(line[1])])
+        newdata.append((win_rate[int(line[0])][1] - win_rate[int(line[1])][0]) * 30)
+        newdata.append((win_rate[int(line[0])][2] - win_rate[int(line[1])][2]) * 30)
+        # guest = list(team_data[int(line[0])])
+        # home = list(team_data[int(line[1])])
         # newdata += [guest[i] - home[i] for i in range(len(home))]
         data_set.append(newdata)
 
@@ -150,9 +151,9 @@ def train(training_set, label_set):
     return classifier, pca
 
 
-def predict(classifier, team_data, pca):
+def predict(classifier, team_data, win_rate, pca):
     # Classify two new flower samples.
-    new_samples, labels, history = loadData('../seedcupTask/matchDataTest.csv', team_data)
+    new_samples, labels, history = loadData('../seedcupTask/matchDataTest.csv', team_data, win_rate)
     new_samples = pca.transform(new_samples)
     predict_input_fn = tf.estimator.inputs.numpy_input_fn(
         x={"x": np.array(new_samples)},
