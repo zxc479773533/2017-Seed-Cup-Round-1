@@ -7,7 +7,7 @@ import numpy as np
 from sklearn.decomposition import PCA
 
 
-def loadData(data_file, team_data):
+def loadData(data_file, team_data, win_rate):
     # load match information
     with open(data_file, 'r') as fp:
         fp.readline()
@@ -27,6 +27,7 @@ def loadData(data_file, team_data):
         index3 = line[3].find('胜')
         newdata += [int(line[2][:index2]), int(line[2][index2+1:-1]),
                     int(line[3][:index3]), int(line[3][index3+1:-1])]
+        newdata.append(win_rate[int(line[0])][0])
         guest = list(team_data[int(line[0])])
         home = list(team_data[int(line[1])])
         # newdata += [guest[i] - home[i] for i in range(len(home))]
@@ -34,7 +35,7 @@ def loadData(data_file, team_data):
 
     if len(lines[0]) == 5:  # if there is match result
         for line in lines:
-            score_data = line[4].split(':')[-2:0]
+            score_data = line[4].split(':')
             diff = int(score_data[0]) - int(score_data[1])
             if diff > 0:
                 # if (0, 4) 0; if [4, 11) 1; if [11, ...) 2
@@ -45,7 +46,6 @@ def loadData(data_file, team_data):
                 newlabel = 3 if diff > -4 else (4 if diff > -11 else 5)
                 history[int(line[0].strip())][int(line[1].strip())][1] += 1
             label_set.append(newlabel)
-    print(history[180][138])
 
     # print(data_set[0])
     return data_set, label_set, history
@@ -169,10 +169,11 @@ def predict(classifier, team_data, pca):
 
 if __name__ == '__main__':
     team_data = np.load('team_data.npy')
+    win_rate = np.load('team_win_rate.npy')
     training_set, label_set, history = loadData(
-        '../2017-Seed-Cup-Round-1/matchDataTrain.csv', team_data)
-    # classifier, pca = train(training_set, label_set)
-    # predict(classifier, team_data, pca)
+        '../2017-Seed-Cup-Round-1/matchDataTrain.csv', team_data, win_rate)
+    classifier, pca = train(training_set, label_set)
+    predict(classifier, team_data, win_rate, pca)
 
 
 
