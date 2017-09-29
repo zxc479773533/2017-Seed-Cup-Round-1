@@ -29,10 +29,10 @@ def loadData(data_file, team_data, win_rate):
                     int(line[3][:index3]), int(line[3][index3+1:-1])]
         newdata.append((win_rate[int(line[0])][1] - win_rate[int(line[1])][0]) * 30)
         newdata.append((win_rate[int(line[0])][2] - win_rate[int(line[1])][2]) * 30)
-        # guest = list(team_data[int(line[0])])
-        # home = list(team_data[int(line[1])])
-        # newdata += [guest[i] - home[i] for i in range(len(home))]
-        data_set.append(newdata)
+        guest = list(team_data[int(line[0])])
+        home = list(team_data[int(line[1])])
+        newdata += [guest[i] - home[i] for i in range(len(home))]
+        data_set.append(newdata)`
 
     if len(lines[0]) == 5:  # if there is match result
         for line in lines:
@@ -49,11 +49,12 @@ def loadData(data_file, team_data, win_rate):
             label_set.append(newlabel)
 
     # print(data_set[0])
+    print(history[0][89])
     return data_set, label_set, history
 
 
 # def train_all(training_set, label_set):
-#     n = None
+#     n = 5
 #     print(n)
 #     pca = PCA(n_components=n)
 #     training_set = pca.fit_transform(training_set)
@@ -65,7 +66,7 @@ def loadData(data_file, team_data, win_rate):
 #         "x", shape=[len(training_set[0])])]
 
 #     # Build 3 layer DNN with 10, 20, 10 units respectively.
-#     hidden_units = [6]
+#     hidden_units = [5]
 #     print(hidden_units)
 #     classifier = tf.estimator.DNNClassifier(feature_columns=feature_columns,
 #                                             hidden_units=hidden_units,
@@ -74,13 +75,13 @@ def loadData(data_file, team_data, win_rate):
     
 #     # Define the training inputs
 #     train_input_fn = tf.estimator.inputs.numpy_input_fn(
-#         x={"x": np.array(training_set[:6000])},
-#         y=np.array(label_set[:6000]),
+#         x={"x": np.array(training_set)},
+#         y=np.array(label_set),
 #         num_epochs=None,
 #         shuffle=True)
 
 #     # Train model.
-#     classifier.train(input_fn=train_input_fn, steps=65000)
+#     classifier.train(input_fn=train_input_fn, steps=38000)
 #     return classifier, pca
 
 
@@ -112,8 +113,9 @@ def train(training_set, label_set):
         shuffle=True)
 
     # Train model.
+    # classifier.train(input_fn=train_input_fn, steps=25000)
     for k in range(1):
-        classifier.train(input_fn=train_input_fn, steps=8000)
+        classifier.train(input_fn=train_input_fn, steps=38000)
 
         # Define the test inputs
         test_input_fn = tf.estimator.inputs.numpy_input_fn(
@@ -144,7 +146,7 @@ def train(training_set, label_set):
             if (int(classes[i][0].decode('utf8')) - 2.5) * (test_label_set[i] - 2.5) > 0:
                 right += 1
 
-        print('train steps number: ', (k+1)*10000)
+        print('train steps number: ', 25000+(k+1)*1000)
         print(
             "New Samples, Accuracy: {}\n"
             .format(right / length))
@@ -153,7 +155,7 @@ def train(training_set, label_set):
 
 def predict(classifier, team_data, win_rate, pca):
     # Classify two new flower samples.
-    new_samples, labels, history = loadData('../matchDataTest.csv', team_data, win_rate)
+    new_samples, labels, history = loadData('../seedcupTask/matchDataTest.csv', team_data, win_rate)
     new_samples = pca.transform(new_samples)
     predict_input_fn = tf.estimator.inputs.numpy_input_fn(
         x={"x": np.array(new_samples)},
@@ -172,10 +174,10 @@ if __name__ == '__main__':
     team_data = np.load('team_data.npy')
     win_rate = np.load('team_win_rate.npy')
     training_set, label_set, history = loadData(
-        '../matchDataTrain.csv', team_data, win_rate)
+        '../2017-Seed-Cup-Round-1/matchDataTrain.csv', team_data, win_rate)
     classifier, pca = train(training_set, label_set)
     predict(classifier, team_data, win_rate, pca)
 
 
-
+# 5 [5] 38000 with winrate
 # 4 features without team data [5] 8000 10000
