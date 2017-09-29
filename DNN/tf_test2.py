@@ -5,6 +5,7 @@ import tensorflow as tf
 import pandas as pd
 import numpy as np
 from sklearn.decomposition import PCA
+from sklearn.metrics import roc_auc_score
 
 
 def loadData(data_file, team_data, win_rate):
@@ -29,10 +30,10 @@ def loadData(data_file, team_data, win_rate):
                     int(line[3][:index3]), int(line[3][index3+1:-1])]
         newdata.append((win_rate[int(line[0])][1] - win_rate[int(line[1])][0]) * 30)
         newdata.append((win_rate[int(line[0])][2] - win_rate[int(line[1])][2]) * 30)
-        guest = list(team_data[int(line[0])])
-        home = list(team_data[int(line[1])])
-        newdata += [guest[i] - home[i] for i in range(len(home))]
-        data_set.append(newdata)`
+        # guest = list(team_data[int(line[0])])
+        # home = list(team_data[int(line[1])])
+        # newdata += [guest[i] - home[i] for i in range(len(home))]
+        data_set.append(newdata)
 
     if len(lines[0]) == 5:  # if there is match result
         for line in lines:
@@ -49,7 +50,6 @@ def loadData(data_file, team_data, win_rate):
             label_set.append(newlabel)
 
     # print(data_set[0])
-    print(history[0][89])
     return data_set, label_set, history
 
 
@@ -86,7 +86,7 @@ def loadData(data_file, team_data, win_rate):
 
 
 def train(training_set, label_set):
-    n = None
+    n = 5
     print(n)
     pca = PCA(n_components=n)
     training_set = pca.fit_transform(training_set)
@@ -107,20 +107,20 @@ def train(training_set, label_set):
     
     # Define the training inputs
     train_input_fn = tf.estimator.inputs.numpy_input_fn(
-        x={"x": np.array(training_set[:6000])},
-        y=np.array(label_set[:6000]),
+        x={"x": np.array(training_set[2000:])},
+        y=np.array(label_set[2000:]),
         num_epochs=None,
         shuffle=True)
 
     # Train model.
     # classifier.train(input_fn=train_input_fn, steps=25000)
-    for k in range(1):
-        classifier.train(input_fn=train_input_fn, steps=38000)
+    for k in range(10):
+        classifier.train(input_fn=train_input_fn, steps=5000)
 
         # Define the test inputs
         test_input_fn = tf.estimator.inputs.numpy_input_fn(
-            x={"x": np.array(training_set[:6000])},
-            y=np.array(label_set[:6000]).T,
+            x={"x": np.array(training_set[2000:])},
+            y=np.array(label_set[2000:]).T,
             num_epochs=1,
             shuffle=False)
 
@@ -131,25 +131,29 @@ def train(training_set, label_set):
 
         # Define the test inputs
         predict_input_fn = tf.estimator.inputs.numpy_input_fn(
-            x={"x": np.array(training_set[6000:])},
+            x={"x": np.array(training_set[:2000])},
             num_epochs=1,
             shuffle=False)
 
         # Evaluate accuracy.
         predictions = list(classifier.predict(input_fn=predict_input_fn))
         classes = [p['classes'] for p in predictions]
+        probabilities = [p['probabilities'] for p in predictions]
+        win_prob = [sum(x[3:6]) for x in probabilities]
 
-        test_label_set = label_set[6000:]
+        test_label_set = label_set[:2000]
         length = len(classes)
         right = 0
         for i in range(length):
             if (int(classes[i][0].decode('utf8')) - 2.5) * (test_label_set[i] - 2.5) > 0:
                 right += 1
 
+        test_label_set = [0 if x < 2.5 else 1 for x in test_label_set]
+
         print('train steps number: ', 25000+(k+1)*1000)
-        print(
-            "New Samples, Accuracy: {}\n"
-            .format(right / length))
+        print("New Samples, Accuracy: ", right / length)
+        print('AUC score: ', roc_auc_score(test_label_set, win_prob))
+        print()
     return classifier, pca
 
 
