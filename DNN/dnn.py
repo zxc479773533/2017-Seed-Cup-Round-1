@@ -34,12 +34,14 @@ def loadData(data_file, win_rate):
         index3 = line[3].find('胜')
         newdata += [
             int(line[2][:index2]),
-            int(line[2][index2+1:-1]),
+            int(line[2][index2 + 1:-1]),
             int(line[3][:index3]),
-            int(line[3][index3+1:-1])
+            int(line[3][index3 + 1:-1])
         ]
-        newdata.append((win_rate[int(line[0])][1] - win_rate[int(line[1])][0]) * 30)
-        newdata.append((win_rate[int(line[0])][2] - win_rate[int(line[1])][2]) * 30)
+        newdata.append((win_rate[int(line[0])][1] -
+                        win_rate[int(line[1])][0]) * 30)
+        newdata.append((win_rate[int(line[0])][2] -
+                        win_rate[int(line[1])][2]) * 30)
         data_set.append(newdata)
 
     # if there is match result
@@ -63,52 +65,53 @@ def train(training_set, label_set):
     # PCA, the n is adjustable parameters, representing the dimensions
     n = None
     print(n)
-    pca = PCA(n_components = n)
+    pca = PCA(n_components=n)
     training_set = pca.fit_transform(training_set)
     print(pca.explained_variance_ratio_)
 
     # specify that all features have real-value data
     feature_columns = [tf.feature_column.numeric_column(
-        "x", shape = [len(training_set[0])])]
+        "x", shape=[len(training_set[0])])]
     print(feature_columns)
     # build 1 layer DNN with 5 units respectively, the hidden units is adjustable parameters
     hidden_units = [5]
     print(hidden_units)
-    classifier = tf.estimator.DNNClassifier(feature_columns = feature_columns,
-                                            hidden_units =  hidden_units,
-                                            n_classes = 6,
-                                            model_dir = "./seedcup_model")
-    
+    classifier = tf.estimator.DNNClassifier(feature_columns=feature_columns,
+                                            hidden_units=hidden_units,
+                                            n_classes=6,
+                                            model_dir="./seedcup_model")
+
     # define the training inputs
     train_input_fn = tf.estimator.inputs.numpy_input_fn(
-        x = {"x": np.array(training_set[:6000])},
-        y = np.array(label_set[:6000]),
-        num_epochs = None,
-        shuffle = True
+        x={"x": np.array(training_set[:6000])},
+        y=np.array(label_set[:6000]),
+        num_epochs=None,
+        shuffle=True
     )
 
     # train model, the number in range and steps is adjustable parameters
     for k in range(1):
-        classifier.train(input_fn = train_input_fn, steps = 38000)
+        classifier.train(input_fn=train_input_fn, steps=38000)
 
         # define the test inputs
         test_input_fn = tf.estimator.inputs.numpy_input_fn(
-            x = {"x": np.array(training_set[:6000])},
-            y = np.array(label_set[:6000]).T,
-            num_epochs = 1,
-            shuffle = False
+            x={"x": np.array(training_set[:6000])},
+            y=np.array(label_set[:6000]).T,
+            num_epochs=1,
+            shuffle=False
         )
 
         # evaluate accuracy.
-        accuracy_score = classifier.evaluate(input_fn = test_input_fn)["accuracy"]
+        accuracy_score = classifier.evaluate(
+            input_fn=test_input_fn)["accuracy"]
 
         print("\nTrain Accuracy: {0:f}\n".format(accuracy_score))
 
         # define the test inputs
         predict_input_fn = tf.estimator.inputs.numpy_input_fn(
-            x = {"x": np.array(training_set[6000:])},
-            num_epochs = 1,
-            shuffle = False
+            x={"x": np.array(training_set[6000:])},
+            num_epochs=1,
+            shuffle=False
         )
 
         # evaluate accuracy.
@@ -134,17 +137,17 @@ def predict(classifier, win_rate, pca):
     new_samples, labels = loadData('../matchDataTest.csv', win_rate)
     new_samples = pca.transform(new_samples)
     predict_input_fn = tf.estimator.inputs.numpy_input_fn(
-        x = {"x": np.array(new_samples)},
-        num_epochs = 1,
-        shuffle = False
+        x={"x": np.array(new_samples)},
+        num_epochs=1,
+        shuffle=False
     )
 
-    predictions = list(classifier.predict(input_fn = predict_input_fn))
+    predictions = list(classifier.predict(input_fn=predict_input_fn))
     probabilities = [p['probabilities'] for p in predictions]
     win_prob = [sum(x[3:6]) for x in probabilities]
 
     # out put the result
-    teamData = pd.DataFrame(np.array(win_prob), columns = [1])
+    teamData = pd.DataFrame(np.array(win_prob), columns=[1])
     teamData.to_csv('../result.csv')
 
 

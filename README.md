@@ -41,6 +41,7 @@ python dnn.py
 1. 本次预测采用DNN(深度神经网络)模型，以之前的比赛数据来构造向量，用作训练数据。
 2. API选用 Tensorflow 框架的 cuda 版本，用 GPU 运行加快计算速度。
 3. 在数据的处理上，矩阵处理使用 numpy 库，csv文件处理使用 pandas 库。
+4. 采用PEP8标准python代码规范，格式清晰，简介明了。
 
 <br><br><br>
 

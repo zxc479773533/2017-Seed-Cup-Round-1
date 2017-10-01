@@ -16,7 +16,7 @@ all_game = np.zeros((208, 3))
 value = data.values
 
 # get win times
-for i in range(2,len(value)):
+for i in range(2, len(value)):
     away = int(value[i][0])
     home = int(value[i][1])
     str = value[i][4]
@@ -40,7 +40,7 @@ for i in range(2,len(value)):
 for i in range(208):
     for j in range(3):
         if all_game[i][j]:
-            result[i][j] = result[i][j]/all_game[i][j]
+            result[i][j] = result[i][j] / all_game[i][j]
         else:
             result[i][j] = None
 
