@@ -180,3 +180,10 @@ classifier.predict(input_fn = predict_input_fn)
 测试阶段选用随机的6000组数据作为训练数据，剩下的数据来模拟测试。通过脚本遍历参数运行程序，来得到测试结果，最终从所有的数据中选出了准确度最高的提交。
 
 在优化上，我们使用了PCA进行降维处理，并且每训练1000次打印一次结果，以便观察训练的效果。
+
+
+## Contributers
+
+* [Yue Pan](https://github.com/zxc479773533)
+* [LOOKCC](https://github.com/LOOKCC)
+* [Q . J . Y](https://github.com/qjy981010)
